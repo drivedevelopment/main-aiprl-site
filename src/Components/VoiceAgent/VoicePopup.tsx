@@ -9,8 +9,6 @@ interface VoicePopupProps {
 export function VoicePopup({ isOpen, onClose }: VoicePopupProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Auto-connect is handled via embed mode parameter in the iframe URL
-  // No need for message passing to prevent duplicate connections
 
   if (!isOpen) return null;
 

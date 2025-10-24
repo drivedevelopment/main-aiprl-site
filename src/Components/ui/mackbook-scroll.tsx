@@ -6,10 +6,289 @@ import AiprlLogo from '../../assets/AiprlLogo.svg'
 import {
   IconCaretRightFilled,
   IconCaretUpFilled,
+  IconPlayerPlay,
+  IconPlayerPause,
+  IconVolume,
+  IconVolumeOff,
+  IconMaximize,
+  IconPlayerSkipForward,
+  IconPlayerSkipBack,
 } from "@tabler/icons-react";
 import { IconCaretLeftFilled } from "@tabler/icons-react";
 import { IconCaretDownFilled } from "@tabler/icons-react";
 import Aiprl from '../../assets/Imagecontent.png'
+import { ContainerScroll } from './container-scroll-animation'
+
+// Video Player Component - Reusable
+export const VideoPlayer = ({ 
+  isVisible,
+  className = "h-full w-full"
+}: { 
+  isVisible: boolean;
+  className?: string;
+}) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showControls, setShowControls] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const videoUrl = "https://res.cloudinary.com/dpu4ldkaw/video/upload/v1761260966/AiprlAssist-Clip_g0a9sc.mp4";
+
+  useEffect(() => {
+    if (isVisible && videoRef.current) {
+      videoRef.current.play().catch(console.error);
+      setIsPlaying(true);
+    } else if (videoRef.current) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [isVisible]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (videoRef.current) {
+      const time = parseFloat(e.target.value);
+      videoRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  const skipForward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime += 10;
+    }
+  };
+
+  const skipBackward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime -= 10;
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <>
+      <style>{`
+        .slider {
+          -webkit-appearance: none;
+          appearance: none;
+          background: transparent;
+          cursor: pointer;
+        }
+        
+        .slider::-webkit-slider-track {
+          background: rgba(255, 255, 255, 0.3);
+          height: 4px;
+          border-radius: 2px;
+        }
+        
+        .slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          background:rgb(197, 117, 13);
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider::-moz-range-track {
+          background: rgba(255, 255, 255, 0.3);
+          height: 4px;
+          border-radius: 2px;
+          border: none;
+        }
+        
+        .slider::-moz-range-thumb {
+          background:rgb(240, 137, 40);
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
+      <div 
+        className={`relative group ${className}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+      <video
+        ref={videoRef}
+        className="h-full w-full object-cover"
+        muted={isMuted}
+        loop
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        playsInline
+        style={{
+          objectPosition: 'center center',
+          minHeight: '100%',
+          minWidth: '100%'
+        }}
+      >
+        <source src={videoUrl} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      
+      {/* Video Controls Overlay */}
+      <div 
+        className={cn(
+          "absolute inset-0 bg-black/20 transition-opacity duration-300",
+          (showControls || isHovered) ? "opacity-100" : "opacity-0"
+        )}
+        onClick={() => setShowControls(!showControls)}
+      >
+        {/* Play/Pause Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlay();
+          }}
+          className="absolute inset-0 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+        >
+          <div className="bg-black/50 rounded-full p-3 sm:p-4 md:p-6">
+            {isPlaying ? (
+              <IconPlayerPause className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10" />
+            ) : (
+              <IconPlayerPlay className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10" />
+            )}
+          </div>
+        </button>
+
+        {/* Bottom Controls Bar */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1 sm:p-2 md:p-3">
+          {/* Progress Bar */}
+          <div className="mb-1 sm:mb-2">
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              value={currentTime}
+              onChange={handleSeek}
+              className="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right,rgb(197, 117, 13) 0%, rgb(197, 117, 13) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.3) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.3) 100%)`
+              }}
+            />
+          </div>
+
+          {/* Control Buttons */}
+          <div className="flex items-center justify-between text-white text-xs sm:text-sm">
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  skipBackward();
+                }}
+                className="hover:text-blue-400 transition-colors"
+              >
+                <IconPlayerSkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePlay();
+                }}
+                className="hover:text-blue-400 transition-colors"
+              >
+                {isPlaying ? (
+                  <IconPlayerPause className="h-4 w-4 sm:h-5 sm:w-5" />
+                ) : (
+                  <IconPlayerPlay className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  skipForward();
+                }}
+                className="hover:text-blue-400 transition-colors"
+              >
+                <IconPlayerSkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <span className="text-white/80">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMute();
+                }}
+                className="hover:text-blue-400 transition-colors"
+              >
+                {isMuted ? (
+                  <IconVolumeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                ) : (
+                  <IconVolume className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
+              </button>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  videoRef.current?.requestFullscreen();
+                }}
+                className="hover:text-blue-400 transition-colors"
+              >
+                <IconMaximize className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </>
+  );
+};
 
 export const MacbookScroll = ({
   showGradient,
@@ -26,6 +305,7 @@ export const MacbookScroll = ({
   });
 
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [showVideo, setShowVideo] = useState(false);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -39,6 +319,14 @@ export const MacbookScroll = ({
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
+
+  // Trigger video when scroll progress reaches 0.3
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      setShowVideo(latest > 0.3);
+    });
+    return unsubscribe;
+  }, [scrollYProgress]);
 
   const isMobile = dimensions.width < 768;
   const isTablet = dimensions.width >= 768 && dimensions.width < 1024;
@@ -96,6 +384,7 @@ export const MacbookScroll = ({
         scaleY={scaleY}
         rotate={rotate}
         translate={translateY}
+        showVideo={showVideo}
       />
       
       {/* Base area - Responsive proportions */}
@@ -140,11 +429,13 @@ export const Lid = ({
   scaleY,
   rotate,
   translate,
+  showVideo,
 }: {
   scaleX: MotionValue<number>;
   scaleY: MotionValue<number>;
   rotate: MotionValue<number>;
   translate: MotionValue<number>;
+  showVideo: boolean;
 }) => {
   return (
     <div className="relative [perspective:1200px]">
@@ -182,14 +473,33 @@ export const Lid = ({
         className="absolute inset-0 mx-auto mt-2 h-[8rem] w-[14rem] rounded-xl bg-[#010101] p-1 sm:mt-4 sm:h-[11rem] sm:w-[18rem] sm:p-2 md:mt-5 md:h-[12rem] md:w-[20rem] md:p-2 lg:-mt-16 lg:h-[18rem] lg:w-[32rem] lg:p-1 xl:h-[22rem] xl:w-[45rem]"
       >
         <div className="absolute inset-0 rounded-lg bg-[#272729] overflow-hidden">
-          {/* Content Container - Properly centered */}
-          <div className="relative h-full w-full flex items-center justify-center p-1 sm:p-2 md:p-2.5 lg:p-4">
-            <img
-              src={Aiprl}
-              alt="Aiprl Assist"
-              className="h-full w-full rounded-md object-contain"
-              style={{ maxHeight: '100%', maxWidth: '100%' }}
-            />
+          {/* Content Container - Full screen without padding */}
+          <div className="relative h-full w-full">
+            {/* Image - shown by default */}
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center"
+              initial={{ opacity: 1 }}
+              animate={{ opacity: showVideo ? 0 : 1 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            >
+              <img
+                src={Aiprl}
+                alt="Aiprl Assist"
+                className="h-full w-full object-cover"
+              />
+            </motion.div>
+            
+            {/* Video - shown when scrolled */}
+            <motion.div
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: showVideo ? 1 : 0 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            >
+              <VideoPlayer 
+                isVisible={showVideo}
+              />
+            </motion.div>
           </div>
         </div>
       </motion.div>
@@ -445,5 +755,111 @@ export const OptionKey = ({ className }: { className: string }) => {
 const AceternityLogo = () => {
   return (
     <img src={AiprlLogo} alt="Aiprllogo" className="h-1.5 w-1.5 text-black sm:h-2 sm:w-2 md:h-3 md:w-3" />
+  );
+};
+
+// Responsive Video Scroll Component
+// Usage: Replace MacbookScroll with ResponsiveVideoScroll in your components
+// Desktop (≥1024px): Shows MacBook scroll effect
+// Mobile & Tablet (<1024px): Shows Container scroll effect with 3D card
+export const ResponsiveVideoScroll = ({
+  showGradient,
+  badge,
+  titleComponent,
+}: {
+  showGradient?: boolean;
+  title?: string | React.ReactNode;
+  badge?: React.ReactNode;
+  titleComponent?: string | React.ReactNode;
+}) => {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      const width = window.innerWidth;
+      setDimensions({ width, height: window.innerHeight });
+      setIsDesktop(width >= 1024); // Desktop breakpoint
+    };
+
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, []);
+
+  // Show loading state while dimensions are being calculated
+  if (dimensions.width === 0) {
+    return <div className="h-screen w-full" />;
+  }
+
+  // Desktop: Use MacBook scroll
+  if (isDesktop) {
+    return (
+      <MacbookScroll
+        showGradient={showGradient}
+        badge={badge}
+      />
+    );
+  }
+
+  // Mobile & Tablet: Use Container scroll
+  return (
+    <ContainerScroll
+      titleComponent={titleComponent || (
+        <h2 className="text-2xl md:text-4xl font-bold text-neutral-800 dark:text-white">
+          Experience AiprlAssist in Action
+        </h2>
+      )}
+    >
+      <VideoContainer />
+    </ContainerScroll>
+  );
+};
+
+// Video Container for ContainerScroll
+const VideoContainer = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+  });
+  const [showVideo, setShowVideo] = useState(false);
+
+  // Trigger video when scroll progress reaches 0.3
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      setShowVideo(latest > 0.3);
+    });
+    return unsubscribe;
+  }, [scrollYProgress]);
+
+  return (
+    <div ref={containerRef} className="relative h-full w-full">
+      {/* Image - shown by default */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: showVideo ? 0 : 1 }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+      >
+        <img
+          src={Aiprl}
+          alt="Aiprl Assist"
+          className="h-full w-full object-cover rounded-lg"
+        />
+      </motion.div>
+      
+      {/* Video - shown when scrolled */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showVideo ? 1 : 0 }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+      >
+        <VideoPlayer 
+          isVisible={showVideo}
+          className="h-full w-full rounded-lg"
+        />
+      </motion.div>
+    </div>
   );
 };

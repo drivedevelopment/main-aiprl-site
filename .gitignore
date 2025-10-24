@@ -24,3 +24,16 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+
+standalone-voice-rings/node_modules/
+standalone-voice-rings/.env
+standalone-voice-rings/.vercel/
+standalone-voice-rings/*.log
+standalone-voice-rings/env.example
+standalone-voice-rings/package-lock.json
+standalone-voice-rings/package.json
+standalone-voice-rings/README.md
+standalone-voice-rings/server.js
+standalone-voice-rings/tsconfig.json
+standalone-voice-rings/tsconfig.app.json
+standalone-voice-rings/tsconfig.node.json
