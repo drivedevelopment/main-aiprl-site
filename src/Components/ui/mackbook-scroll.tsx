@@ -16,7 +16,7 @@ import {
 } from "@tabler/icons-react";
 import { IconCaretLeftFilled } from "@tabler/icons-react";
 import { IconCaretDownFilled } from "@tabler/icons-react";
-import Aiprl from '../../assets/Imagecontent.png'
+import Aiprl from '../../assets/Curious-Customer.png'
 import { ContainerScroll } from './container-scroll-animation'
 
 // Video Player Component - Reusable
