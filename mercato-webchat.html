@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mercato Interiors - Chat Support</title>
+
+    <style>
+        /* Hide the original KTT10 button */
+        .ktt10-btn {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        /* Top Popup Notification */
+        .top-notification {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #b8956f 0%, #9b7a5a 100%);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 20px rgba(155, 122, 90, 0.4);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            transition: top 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+            max-width: 90%;
+            cursor: pointer;
+        }
+
+        .top-notification.show {
+            top: 0;
+        }
+
+        .top-notification-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .top-notification-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: white;
+        }
+
+        .top-notification-content {
+            flex: 1;
+        }
+
+        .top-notification-content h4 {
+            margin: 0 0 2px 0;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .top-notification-content p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .top-notification-close {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .top-notification-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .top-notification-close svg {
+            width: 10px;
+            height: 10px;
+            fill: white;
+        }
+
+        /* Custom chat button styles - Mercato brown theme */
+        .custom-chat-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #b8956f 0%, #9b7a5a 100%);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(155, 122, 90, 0.3);
+            transition: all 0.3s ease;
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-chat-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(155, 122, 90, 0.4);
+        }
+
+        .custom-chat-btn svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        /* Chat popup container - Desktop (matching KTT10 dimensions) */
+        .chat-popup-container {
+            position: fixed;
+            bottom: 90px;
+            right: 10px;
+            width: 370px;
+            height: 80vh;
+            max-height: 600px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            z-index: 9999;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-popup-container.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Chat header - Mercato brown */
+        .chat-header {
+            background: linear-gradient(135deg, #b8956f 0%, #9b7a5a 100%);
+            padding: 16px 20px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-divider {
+            width: 1px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .brand-info h3 {
+            margin: 0;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Playfair Display', Georgia, serif;
+            letter-spacing: 0.8px;
+        }
+
+        .brand-info p {
+            margin: 2px 0 0 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-style: italic;
+            letter-spacing: 0.3px;
+        }
+
+        /* Close button */
+        .chat-close {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 26px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        .chat-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-close svg {
+            width: 14px;
+            height: 14px;
+            fill: white;
+        }
+
+        /* Chat body - Scrollable */
+        .chat-body {
+            padding: 20px;
+            background: #f8f7f5;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Bot message bubble */
+        .bot-message-wrapper {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .bot-avatar {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            background: #2c2c2c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+            font-weight: 600;
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .bot-message {
+            background: white;
+            border: 1px solid #e8e5e0;
+            border-radius: 14px;
+            padding: 14px;
+            position: relative;
+            flex: 1;
+        }
+
+        .bot-message h4 {
+            margin: 0 0 10px 0;
+            color: #2c2c2c;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .bot-message p {
+            margin: 0 0 6px 0;
+            color: #2c2c2c;
+            font-size: 13px;
+            line-height: 1.4;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .bot-message p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Form styles */
+        .chat-form {
+            margin: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c2c2c;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d4cfc6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #b8956f;
+            box-shadow: 0 0 0 2px rgba(184, 149, 111, 0.2);
+        }
+
+        .form-group input::placeholder {
+            color: #9b9891;
+        }
+
+        .start-chat-btn {
+            width: 100%;
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #b8956f 0%, #9b7a5a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .start-chat-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(155, 122, 90, 0.3);
+            background: linear-gradient(135deg, #a68460 0%, #8a6a4f 100%);
+        }
+
+        .start-chat-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        .chat-footer {
+            padding: 10px 15px;
+            background: white;
+            border-top: 1px solid #e8e5e0;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .chat-footer p {
+            margin: 0;
+            color: #9b9891;
+            font-size: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Error message styles */
+        .error-message {
+            color: #c84444;
+            font-size: 11px;
+            margin-top: 3px;
+            display: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Pulse animation for chat button */
+        .custom-chat-btn::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #b8956f 0%, #9b7a5a 100%);
+            animation: pulse 2s infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.15);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Add Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
+
+        /* Scrollbar for chat body */
+        .chat-body::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-body::-webkit-scrollbar-track {
+            background: #f1f0ee;
+            border-radius: 3px;
+        }
+
+        .chat-body::-webkit-scrollbar-thumb {
+            background: #b8956f;
+            border-radius: 3px;
+        }
+
+        .chat-body::-webkit-scrollbar-thumb:hover {
+            background: #9b7a5a;
+        }
+
+        /* Tablet responsive (iPads, etc.) */
+        @media (max-width: 768px) and (min-width: 481px) {
+            .chat-popup-container {
+                width: 350px;
+                height: 70vh;
+                max-height: 500px;
+                right: 10px;
+                bottom: 80px;
+            }
+
+            .top-notification {
+                padding: 12px 20px;
+            }
+
+            .top-notification-content h4 {
+                font-size: 13px;
+            }
+
+            .top-notification-content p {
+                font-size: 11px;
+            }
+        }
+
+        /* Mobile responsive - FULLSCREEN */
+        @media (max-width: 480px) {
+            .chat-popup-container {
+                position: fixed;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+            }
+
+            .chat-popup-container.active {
+                transform: translateY(0) scale(1) !important;
+            }
+
+            .chat-header {
+                border-radius: 0;
+                padding: 20px;
+            }
+
+            .brand-info h3 {
+                font-size: 18px;
+            }
+
+            .brand-info p {
+                font-size: 11px;
+            }
+
+            .chat-body {
+                padding: 20px 15px;
+            }
+
+            .bot-message h4 {
+                font-size: 16px;
+            }
+
+            .bot-message p {
+                font-size: 14px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-group input {
+                padding: 12px 16px;
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+
+            .start-chat-btn {
+                padding: 14px 20px;
+                font-size: 16px;
+            }
+
+            .custom-chat-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+            }
+
+            .custom-chat-btn svg {
+                width: 26px;
+                height: 26px;
+            }
+
+            /* Ensure close button is easily tappable on mobile */
+            .chat-close {
+                width: 32px;
+                height: 32px;
+                right: 20px;
+            }
+
+            .chat-close svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            /* Top notification mobile styles */
+            .top-notification {
+                border-radius: 0 0 8px 8px;
+                padding: 12px 16px;
+                max-width: 100%;
+                width: calc(100% - 20px);
+            }
+
+            .top-notification-icon {
+                width: 20px;
+                height: 20px;
+            }
+
+            .top-notification-content h4 {
+                font-size: 13px;
+            }
+
+            .top-notification-content p {
+                font-size: 11px;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-width: 360px) {
+            .brand-info h3 {
+                font-size: 16px;
+            }
+
+            .bot-message h4 {
+                font-size: 15px;
+            }
+
+            .bot-message p {
+                font-size: 13px;
+            }
+
+            .top-notification-content h4 {
+                font-size: 12px;
+            }
+
+            .top-notification-content p {
+                font-size: 10px;
+            }
+        }
+
+        /* Handle landscape orientation on mobile */
+        @media (max-width: 767px) and (orientation: landscape) {
+            .chat-popup-container {
+                height: 100vh !important;
+                max-height: 100vh !important;
+            }
+
+            .chat-header {
+                padding: 12px 20px;
+            }
+
+            .chat-body {
+                padding: 15px;
+            }
+
+            .bot-message-wrapper {
+                margin-bottom: 15px;
+            }
+
+            .form-group {
+                margin-bottom: 10px;
+            }
+        }
+
+        /* iOS specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            @media (max-width: 480px) {
+                .chat-popup-container {
+                    height: 100vh !important;
+                    height: -webkit-fill-available !important;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Notification Popup -->
+    <div class="top-notification" id="topNotification">
+        <div class="top-notification-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
+            </svg>
+        </div>
+        <div class="top-notification-content">
+            <h4>Need Assistance?</h4>
+            <p>Chat with us for instant support and personalized recommendations!</p>
+        </div>
+        <button class="top-notification-close" id="topNotificationClose">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+                <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Custom Chat Button -->
+    <button class="custom-chat-btn" id="customChatBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512">
+            <path d="M208 352c114.9 0 208-78.8 208-176S322.9 0 208 0S0 78.8 0 176c0 38.6 14.7 74.3 39.6 103.4c-3.5 9.4-8.7 17.7-14.2 24.7c-4.8 6.2-9.7 11-13.3 14.3c-1.8 1.6-3.3 2.9-4.3 3.7c-.5 .4-.9 .7-1.1 .9l-.2 .2 0 0 0 0C1 327.2-1.4 334.4 .8 340.9S9.1 352 16 352c21.8 0 43.8-5.6 62.1-12.5c9.2-3.5 17.8-7.4 25.3-11.4C134.1 343.3 169.8 352 208 352zM448 176c0 112.3-99.1 196.9-216.5 207C255.8 457.4 336.4 512 432 512c38.2 0 73.9-8.7 104.7-23.9c7.5 4 16 7.9 25.2 11.4c18.3 6.9 40.3 12.5 62.1 12.5c6.9 0 13.1-4.5 15.2-11.1c2.1-6.6-.2-13.8-5.8-17.9l0 0 0 0-.2-.2c-.2-.2-.6-.4-1.1-.9c-1-.8-2.5-2-4.3-3.7c-3.6-3.3-8.5-8.1-13.3-14.3c-5.5-7-10.7-15.4-14.2-24.7c24.9-29 39.6-64.7 39.6-103.4c0-92.8-84.9-168.9-192.6-175.5c.4 5.1 .6 10.3 .6 15.5z"/>
+        </svg>
+    </button>
+
+    <!-- Chat Popup -->
+    <div class="chat-popup-container" id="chatPopup">
+        <div class="chat-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-divider"></div>
+                    <div class="brand-info">
+                        <h3>MERCATO INTERIORS</h3>
+                        <p>Fine Furniture & Design</p>
+                    </div>
+                </div>
+            </div>
+            <button class="chat-close" id="chatClose">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+                    <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="chat-body">
+            <div class="bot-message-wrapper">
+                <div class="bot-avatar">MI</div>
+                <div class="bot-message">
+                    <h4>Hello and Welcome to Mercato Interiors!</h4>
+                    <p>I am here to assist you with any questions you have. Looking for Questions, Recommendations or need Support?</p>
+                    <p>Just let me know.</p>
+                </div>
+            </div>
+
+            <form class="chat-form" id="chatForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+                    <div class="error-message" id="nameError">Please enter your full name</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                    <div class="error-message" id="emailError">Please enter a valid email address</div>
+                </div>
+
+                <button type="submit" class="start-chat-btn">
+                    Start Chat
+                </button>
+            </form>
+        </div>
+
+        <div class="chat-footer">
+            <p>Built with AiPRL</p>
+        </div>
+    </div>
+
+    <!-- Original KTT10 Script -->
+    <script src="https://app.aiprlassist.com/webchat/plugin.js?v=6"></script>
+
+    <!-- Custom Script -->
+    <script>
+        // Storage keys
+        const STORAGE_KEY = 'mercato_chat_user_data';
+        const NOTIFICATION_STORAGE_KEY = 'mercato_notification_dismissed';
+
+        // Check if user data exists in localStorage
+        function getUserData() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                console.error('Error reading user data:', e);
+                return null;
+            }
+        }
+
+        // Save user data to localStorage
+        function saveUserData(email, fullName) {
+            try {
+                const userData = {
+                    email: email,
+                    fullName: fullName,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+                return true;
+            } catch (e) {
+                console.error('Error saving user data:', e);
+                return false;
+            }
+        }
+
+        // Check if notification was dismissed
+        function wasNotificationDismissed() {
+            try {
+                const dismissed = localStorage.getItem(NOTIFICATION_STORAGE_KEY);
+                if (!dismissed) return false;
+
+                const dismissData = JSON.parse(dismissed);
+                const dismissedTime = new Date(dismissData.timestamp);
+                const now = new Date();
+
+                // Show again after 24 hours
+                const hoursSinceDismiss = (now - dismissedTime) / (1000 * 60 * 60);
+                return hoursSinceDismiss < 24;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Save notification dismissal
+        function saveNotificationDismissal() {
+            try {
+                const dismissData = {
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem(NOTIFICATION_STORAGE_KEY, JSON.stringify(dismissData));
+            } catch (e) {
+                console.error('Error saving notification dismissal:', e);
+            }
+        }
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const customChatBtn = document.getElementById('customChatBtn');
+            const chatPopup = document.getElementById('chatPopup');
+            const chatClose = document.getElementById('chatClose');
+            const chatForm = document.getElementById('chatForm');
+            const fullNameInput = document.getElementById('fullName');
+            const emailInput = document.getElementById('email');
+            const nameError = document.getElementById('nameError');
+            const emailError = document.getElementById('emailError');
+            const topNotification = document.getElementById('topNotification');
+            const topNotificationClose = document.getElementById('topNotificationClose');
+
+            // Check for existing user data
+            const existingUser = getUserData();
+
+            // Show top notification after 3 seconds if not dismissed
+            if (!wasNotificationDismissed()) {
+                setTimeout(function() {
+                    topNotification.classList.add('show');
+
+                    // Auto-hide after 10 seconds
+                    setTimeout(function() {
+                        if (topNotification.classList.contains('show')) {
+                            topNotification.classList.remove('show');
+                        }
+                    }, 10000);
+                }, 3000);
+            }
+
+            // Click on notification to open chat
+            topNotification.addEventListener('click', function(e) {
+                if (!e.target.closest('.top-notification-close')) {
+                    topNotification.classList.remove('show');
+                    const userData = getUserData();
+
+                    if (userData && userData.email && userData.fullName) {
+                        triggerKTT10WithUserData(userData.email, userData.fullName);
+                    } else {
+                        chatPopup.classList.add('active');
+                    }
+                }
+            });
+
+            // Close notification
+            topNotificationClose.addEventListener('click', function(e) {
+                e.stopPropagation();
+                topNotification.classList.remove('show');
+                saveNotificationDismissal();
+            });
+
+            // Hide original KTT10 button
+            function hideOriginalButton() {
+                const ktt10Btn = document.querySelector('.ktt10-btn');
+                if (ktt10Btn) {
+                    ktt10Btn.style.display = 'none';
+                    ktt10Btn.style.visibility = 'hidden';
+                    ktt10Btn.style.opacity = '0';
+                    ktt10Btn.style.position = 'absolute';
+                    ktt10Btn.style.left = '-9999px';
+                }
+
+                // Also hide the floating window initially
+                const ktt10Flt = document.querySelector('.ktt10-flt');
+                if (ktt10Flt) {
+                    ktt10Flt.style.display = 'none';
+                }
+            }
+
+            // Use MutationObserver to ensure button stays hidden
+            const observer = new MutationObserver(function(mutations) {
+                hideOriginalButton();
+            });
+
+            // Start observing
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            // Initial hide
+            setTimeout(hideOriginalButton, 100);
+            setTimeout(hideOriginalButton, 500);
+            setTimeout(hideOriginalButton, 1000);
+
+            // Function to trigger KTT10 with user data
+            function triggerKTT10WithUserData(userEmail, userFullName) {
+                // Clear any existing KTT10 elements except the script
+                const existingBtn = document.querySelector('.ktt10-btn');
+                const existingFlt = document.querySelector('.ktt10-flt');
+                if (existingBtn) existingBtn.remove();
+                if (existingFlt) existingFlt.remove();
+
+                // Re-initialize KTT10 with user data - YOUR CREDENTIALS
+                if (typeof ktt10 !== 'undefined' && ktt10.setup) {
+                    ktt10.setup({
+                        id: "MelPoSfaOxlDrEAXA",
+                        accountId: "1192437",
+                        color: "#006dff",
+                        setCustomFields: [
+                            { id: "email", value: userEmail },
+                            { id: "full_name", value: userFullName }
+                        ]
+                    });
+
+                    // Wait for KTT10 to create new elements
+                    setTimeout(function() {
+                        const newBtn = document.querySelector('.ktt10-btn');
+                        const newFlt = document.querySelector('.ktt10-flt');
+
+                        if (newBtn) {
+                            // Hide the button
+                            newBtn.style.display = 'none';
+                            newBtn.style.visibility = 'hidden';
+                            newBtn.style.opacity = '0';
+
+                            // Show the floating window
+                            if (newFlt) {
+                                newFlt.style.display = 'block';
+                            }
+
+                            // Trigger the button click
+                            newBtn.click();
+                        }
+                    }, 200);
+                }
+            }
+
+            // Handle custom chat button click
+            customChatBtn.addEventListener('click', function() {
+                const userData = getUserData();
+
+                if (userData && userData.email && userData.fullName) {
+                    // User already registered - directly trigger KTT10
+                    triggerKTT10WithUserData(userData.email, userData.fullName);
+                } else {
+                    // New user - show the registration popup
+                    chatPopup.classList.add('active');
+                }
+            });
+
+            // Close popup
+            chatClose.addEventListener('click', function() {
+                chatPopup.classList.remove('active');
+            });
+
+            // Email validation
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+
+            // Form submission
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Reset error messages
+                nameError.classList.remove('show');
+                emailError.classList.remove('show');
+
+                // Validate inputs
+                let isValid = true;
+
+                if (!fullNameInput.value.trim()) {
+                    nameError.classList.add('show');
+                    isValid = false;
+                }
+
+                if (!emailInput.value.trim() || !validateEmail(emailInput.value)) {
+                    emailError.classList.add('show');
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    const userEmail = emailInput.value.trim();
+                    const userFullName = fullNameInput.value.trim();
+
+                    // Save user data to localStorage
+                    saveUserData(userEmail, userFullName);
+
+                    // Close the popup
+                    chatPopup.classList.remove('active');
+
+                    // Trigger KTT10 with user data
+                    triggerKTT10WithUserData(userEmail, userFullName);
+                }
+            });
+
+            // Clear error messages on input
+            fullNameInput.addEventListener('input', function() {
+                nameError.classList.remove('show');
+            });
+
+            emailInput.addEventListener('input', function() {
+                emailError.classList.remove('show');
+            });
+
+            // Optional: Add a way to clear user data (for testing)
+            // You can call this from console: clearUserData()
+            window.clearUserData = function() {
+                localStorage.removeItem(STORAGE_KEY);
+                console.log('User data cleared. Refresh the page to see the registration form again.');
+            };
+
+            // Optional: Clear notification dismissal (for testing)
+            window.clearNotificationDismissal = function() {
+                localStorage.removeItem(NOTIFICATION_STORAGE_KEY);
+                console.log('Notification dismissal cleared. Refresh to see the notification again.');
+            };
+        });
+    </script>
+</body>
+</html>
